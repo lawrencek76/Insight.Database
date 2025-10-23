@@ -115,6 +115,11 @@ namespace Insight.Database.CodeGenerator
 			{ DbType.Binary, typeof(byte[]) },
 			{ DbType.Object, typeof(object) },
             { DbType.Xml, typeof(string) },
+			//json
+#if NET9_0_OR_GREATER
+			{ DbType.Json, typeof(string) },
+#endif
+			{ (DbType)35, typeof(string) },
 		};
 
 		/// <summary>

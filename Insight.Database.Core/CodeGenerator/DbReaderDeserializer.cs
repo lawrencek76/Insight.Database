@@ -57,7 +57,11 @@ namespace Insight.Database.CodeGenerator
             _simpleDeserializers.TryAdd(typeof(ExpandoObject), GetDynamicDeserializer<ExpandoObject, ExpandoObject>());
             _simpleDeserializers.TryAdd(typeof(XmlDocument), GetXmlDocumentDeserializer());
             _simpleDeserializers.TryAdd(typeof(XDocument), GetXDocumentDeserializer());
-            _simpleDeserializers.TryAdd(typeof(byte[]), GetByteArrayDeserializer());
+#if NET8_0_OR_GREATER
+			_simpleDeserializers.TryAdd(typeof(System.Text.Json.Nodes.JsonNode), GetJsonNodeDeserializer());
+			_simpleDeserializers.TryAdd(typeof(System.Text.Json.JsonDocument), GetJsonDocumentDeserializer());
+#endif
+			_simpleDeserializers.TryAdd(typeof(byte[]), GetByteArrayDeserializer());
             _simpleDeserializers.TryAdd(typeof(char), new Func<IDataReader, char>(r => TypeConverterGenerator.ReadChar(r.GetValue(0))));
             _simpleDeserializers.TryAdd(typeof(char?), new Func<IDataReader, char?>(r => TypeConverterGenerator.ReadNullableChar(r.GetValue(0))));
             _simpleDeserializers.TryAdd(typeof(string), GetValueDeserializer<string>());
@@ -415,7 +419,33 @@ namespace Insight.Database.CodeGenerator
                 return XDocument.Parse(reader.GetString(0));
             };
         }
-        #endregion
-    }
-    #endregion
+		#endregion
+
+#if NET8_0_OR_GREATER
+		/// <summary>
+		/// Returns a deserializer for an JsonNode.
+		/// </summary>
+		/// <returns>A deserializer for an JsonNode.</returns>
+		private static Func<IDataReader, System.Text.Json.Nodes.JsonNode> GetJsonNodeDeserializer()
+		{
+			return reader =>
+			{
+				return System.Text.Json.Nodes.JsonNode.Parse(reader.GetString(0));
+			};
+		}
+
+		/// <summary>
+		/// Returns a deserializer for an JsonDocument.
+		/// </summary>
+		/// <returns>A deserializer for an JsonDocument.</returns>
+		private static Func<IDataReader, System.Text.Json.JsonDocument> GetJsonDocumentDeserializer()
+		{
+			return reader =>
+			{
+				return System.Text.Json.JsonDocument.Parse(reader.GetString(0));
+			};
+		}
+#endif
+	}
+#endregion
 }

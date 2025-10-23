@@ -44,37 +44,38 @@ namespace Insight.Tests.MsSqlClient
                 c.ExecuteSql("INSERT INTO JsonTest VALUES(@s)", new { s = new String('x', 10000) });
 
                 var inner = (SqlConnection)c.InnerConnection;
-
-                var result = inner.QueryXml("SELECT * FROM JsonTest", commandType: CommandType.Text, transaction: c);
-            }
+				//
+				throw new NotImplementedException();
+				//var result = inner.QueryJson("SELECT * FROM JsonTest", commandType: CommandType.Text, transaction: c);
+			}
         }
 
         [Test]
-        public void JsonSingleColumnCanDeserializeToJsonDocument()
+        public void JsonSingleColumnCanDeserializeToJsonNode()
         {
-            var list = Connection().QuerySql<string>("SELECT CONVERT(json, '{}')", new { });
-
+            var list = Connection().QuerySql<JsonNode>("SELECT CONVERT(json, '{}')", new { });
+			
             ClassicAssert.IsNotNull(list);
             var doc = list[0];
             ClassicAssert.IsNotNull(doc);
             
         }
 
-        [Test]
-        public void XmlSingleColumnCanDeserializeToXDocument()
-        {
-            var list = Connection().QuerySql<XDocument>("SELECT CONVERT(xml, '<data/>')", new { });
+		[Test]
+		public void JsonSingleColumnCanDeserializeToJsonDocument()
+		{
+			var list = Connection().QuerySql<JsonDocument>("SELECT CONVERT(json, '{}')", new { });
 
-            ClassicAssert.IsNotNull(list);
-            var doc = list[0];
-            ClassicAssert.IsNotNull(doc);
-            ClassicAssert.AreEqual("<data />", doc.ToString());
-        }
+			ClassicAssert.IsNotNull(list);
+			var obj = list[0];
+			ClassicAssert.IsNotNull(obj);
+			ClassicAssert.AreEqual(JsonValueKind.Object, obj.RootElement.ValueKind);
+		}
 
-        [Test]
+		[Test]
         public void XmlSingleColumnCanDeserializeToString()
         {
-            var list = Connection().QuerySql<string>("SELECT CONVERT(xml, '<data/>')", new { });
+            var list = Connection().QuerySql<string>("SELECT CONVERT(json, '<data/>')", new { });
 
             ClassicAssert.IsNotNull(list);
             var s = list[0];
