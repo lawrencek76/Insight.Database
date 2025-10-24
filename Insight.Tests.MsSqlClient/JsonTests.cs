@@ -25,8 +25,8 @@ namespace Insight.Tests.MsSqlClient
         {
             public Data Data;
             public string String;
-            //public System.Text.Json.JsonDocument jsonDocument;
-            public System.Text.Json.Nodes.JsonNode jsonNode;
+            public System.Text.Json.JsonDocument JsonDocument;
+            public System.Text.Json.Nodes.JsonNode JsonNode;
         }
 
         class Data
@@ -35,20 +35,6 @@ namespace Insight.Tests.MsSqlClient
         }
 
         #region SingleColumn Deserialization Tests
-        [Test]
-        public void JsonIsDeserializedProperly()
-        {
-            using (var c = Connection().OpenWithTransaction())
-            {
-                c.ExecuteSql("CREATE TABLE JsonTest(stuff json)");
-                c.ExecuteSql("INSERT INTO JsonTest VALUES(@s)", new { s = new String('x', 10000) });
-
-                var inner = (SqlConnection)c.InnerConnection;
-				//
-				throw new NotImplementedException();
-				//var result = inner.QueryJson("SELECT * FROM JsonTest", commandType: CommandType.Text, transaction: c);
-			}
-        }
 
         [Test]
         public void JsonSingleColumnCanDeserializeToJsonNode()
@@ -73,58 +59,58 @@ namespace Insight.Tests.MsSqlClient
 		}
 
 		[Test]
-        public void XmlSingleColumnCanDeserializeToString()
+        public void JsonSingleColumnCanDeserializeToString()
         {
-            var list = Connection().QuerySql<string>("SELECT CONVERT(json, '<data/>')", new { });
+            var list = Connection().QuerySql<string>("SELECT CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
 
             ClassicAssert.IsNotNull(list);
             var s = list[0];
             ClassicAssert.IsNotNull(s);
-            ClassicAssert.AreEqual("<data />", s);
+            ClassicAssert.AreEqual("{\"Text\":\"foo\"}", s);
         }
         #endregion
 
-        #region Xml Column Deserialization Tests
+        #region Json Column Deserialization Tests
         [Test]
-        public void XmlColumnCanDeserializeToString()
+        public void JsonColumnCanDeserializeToString()
         {
-            var list = Connection().QuerySql<Result>("SELECT String=CONVERT(xml, '<Data><Text>foo</Text></Data>')", new { });
+            var list = Connection().QuerySql<Result>("SELECT String=CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
 
             ClassicAssert.IsNotNull(list);
             var result = list[0];
             ClassicAssert.IsNotNull(result);
             ClassicAssert.IsNotNull(result.String);
-            ClassicAssert.AreEqual("<Data><Text>foo</Text></Data>", result.String);
+            ClassicAssert.AreEqual("{\"Text\":\"foo\"}", result.String);
         }
 
-        //[Test]
-        //public void XmlColumnCanDeserializeToXmlDocument()
-        //{
-        //    var list = Connection().QuerySql<Result>("SELECT XmlDocument=CONVERT(xml, '<Data><Text>foo</Text></Data>')", new { });
+		[Test]
+		public void JsonColumnCanDeserializeToJsonDocument()
+		{
+			var list = Connection().QuerySql<Result>("SELECT JsonDocument=CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
 
-        //    ClassicAssert.IsNotNull(list);
-        //    var result = list[0];
-        //    ClassicAssert.IsNotNull(result);
-        //    ClassicAssert.IsNotNull(result.jsonDocument);
-        //    ClassicAssert.AreEqual("<Data><Text>foo</Text></Data>", result.jsonDocument);
-        //}
+			ClassicAssert.IsNotNull(list);
+			var result = list[0];
+			ClassicAssert.IsNotNull(result);
+			ClassicAssert.IsNotNull(result.JsonDocument);
+			ClassicAssert.AreEqual("{\"Text\":\"foo\"}", result.JsonDocument.ToString());
+		}
 
-        [Test]
-        public void XmlColumnCanDeserializeToXDocument()
+		[Test]
+        public void JsonColumnCanDeserializeToJsonNode()
         {
-            var list = Connection().QuerySql<Result>("SELECT XDocument=CONVERT(xml, '<Data><Text>foo</Text></Data>')", new { });
+            var list = Connection().QuerySql<Result>("SELECT JsonNode=CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
 
             ClassicAssert.IsNotNull(list);
             var result = list[0];
             ClassicAssert.IsNotNull(result);
-            ClassicAssert.IsNotNull(result.jsonNode);
-            ClassicAssert.AreEqual(String.Format("<Data>{0}  <Text>foo</Text>{0}</Data>", Environment.NewLine), result.jsonNode.ToString());
+            ClassicAssert.IsNotNull(result.JsonNode);
+            ClassicAssert.AreEqual("{\"Text\":\"foo\"}", result.JsonNode.ToString());
         }
 
         [Test]
-        public void XmlColumnCanDeserializeToObject()
+        public void JsonColumnCanDeserializeToObject()
         {
-            var list = Connection().QuerySql<Result>("SELECT Data=CONVERT(xml, '<XmlTests.Data xmlns=\"http://schemas.datacontract.org/2004/07/Insight.Tests.MsSqlClient\"><Text>foo</Text></XmlTests.Data>')", new { });
+            var list = Connection().QuerySql<Result>("SELECT Data=CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
 
             ClassicAssert.IsNotNull(list);
             var result = list[0];
@@ -136,25 +122,24 @@ namespace Insight.Tests.MsSqlClient
 
         #region Serialization Tests
         [Test]
-        public void XmlDocumentCanSerializeToXmlParameter()
+        public void JsonDocumentCanSerializeToJsonParameter()
         {
             // create a document
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml("<Data><Text>foo</Text></Data>");
+            JsonDocument doc = JsonDocument.Parse("{ \"Text\": \"foo\" }");
 
-            var list = Connection().Query<XmlDocument>("ReflectXml", new { Xml = doc });
+            var list = Connection().Query<JsonDocument>("ReflectJson", new { Json = doc });
             var data = list[0];
             ClassicAssert.IsNotNull(data);
-            ClassicAssert.AreEqual(doc.OuterXml, data.OuterXml);
+            ClassicAssert.AreEqual(doc.ToString(), data.ToString());
         }
 
         [Test]
-        public void XDocumentCanSerializeToXmlParameter()
+        public void JsonNodeCanSerializeToJsonParameter()
         {
             // create a document
             XDocument doc = XDocument.Parse("<Data><Text>foo</Text></Data>");
 
-            var list = Connection().Query<XDocument>("ReflectXml", new { Xml = doc });
+            var list = Connection().Query<JsonNode>("ReflectJson", new { Json = doc });
             var data = list[0];
             ClassicAssert.IsNotNull(data);
             ClassicAssert.AreEqual(doc.ToString(), data.ToString());

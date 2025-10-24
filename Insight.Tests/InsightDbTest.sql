@@ -216,6 +216,20 @@ CREATE PROC ReflectTwoRecordsets (@Value varchar(128), @Value2 varchar(128)) AS 
 GO
 
 ----------------------------------------------------------
+-- Json test types
+----------------------------------------------------------
+CREATE PROC ReflectJson (@Json json) AS SELECT Json=@Json
+GO
+CREATE PROC ReflectJsonAsData (@Json json) AS SELECT Data=@Json
+GO
+CREATE TYPE [JsonDataTable] AS TABLE ([id] int, [Data] json)
+GO
+CREATE PROCEDURE ReflectJsonTable @p [JsonDataTable] READONLY AS SELECT * FROM @p
+GO
+CREATE PROCEDURE ReflectJsonTableAsVarChar @p [JsonDataTable] READONLY AS SELECT CONVERT(varchar(MAX),Data) FROM @p
+GO
+
+----------------------------------------------------------
 -- Output parameter procs
 ----------------------------------------------------------
 CREATE PROCEDURE TestOutputParameters @p int = 1 OUTPUT AS SET @p = 9
