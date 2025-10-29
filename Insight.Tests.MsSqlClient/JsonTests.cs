@@ -137,7 +137,7 @@ namespace Insight.Tests.MsSqlClient
         public void JsonNodeCanSerializeToJsonParameter()
         {
             // create a document
-            XDocument doc = XDocument.Parse("<Data><Text>foo</Text></Data>");
+            JsonNode doc = JsonNode.Parse("{ \"Text\": \"foo\" }");
 
             var list = Connection().Query<JsonNode>("ReflectJson", new { Json = doc });
             var data = list[0];
@@ -146,7 +146,7 @@ namespace Insight.Tests.MsSqlClient
         }
 
         [Test]
-        public void ObjectCanSerializeToXmlParameter()
+        public void ObjectCanSerializeToJsonParameter()
         {
             // create a document
             Data d = new Data()
@@ -154,22 +154,22 @@ namespace Insight.Tests.MsSqlClient
                 Text = "foo"
             };
 
-            var list = Connection().Query<Result>("ReflectXmlAsData", new { Xml = d });
+            var list = Connection().Query<Result>("ReflectJsonAsData", new { Json = d });
             var data = list[0];
             ClassicAssert.IsNotNull(data);
             ClassicAssert.AreEqual(d.Text, data.Data.Text);
         }
 
         [Test]
-        public void StringCanSerializeToXmlParameter()
+        public void StringCanSerializeToJsonParameter()
         {
             // create a document
-            string doc = "<Data><Text>foo</Text></Data>";
+            string doc = "{ \"Text\": \"foo\" }";
 
-            var list = Connection().Query<string>("ReflectXml", new { Xml = doc });
+            var list = Connection().Query<string>("ReflectJson", new { Json = doc });
             var data = list[0];
             ClassicAssert.IsNotNull(data);
-            ClassicAssert.AreEqual(doc, data);
+            ClassicAssert.AreEqual("{\"Text\":\"foo\"}", data);
         }
         #endregion
     }

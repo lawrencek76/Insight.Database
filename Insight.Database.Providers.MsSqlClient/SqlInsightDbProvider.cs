@@ -117,7 +117,8 @@ namespace Insight.Database.Providers.MsSqlClient
 			if (command == null) throw new ArgumentNullException("command");
 
 			SqlCommand sqlCommand = command as SqlCommand;
-			SqlCommandBuilder.DeriveParameters(sqlCommand);
+
+			//SqlCommandBuilder.DeriveParameters(sqlCommand);
 
 			AdjustSqlParameters(sqlCommand);
 
@@ -339,6 +340,18 @@ namespace Insight.Database.Providers.MsSqlClient
 			return false;
 		}
 
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CS0649")]
+		private class ParameterInfo
+		{
+			public string Name;
+			public string Schema;
+			public string Type;
+			public int Max_Length;
+			public int Precision;
+			public int Scale;
+			public bool Is_Output;
+		}
+
 		/// <summary>
 		/// Fixes various issues with deriving parameters from SQL Server.
 		/// </summary>
@@ -352,49 +365,43 @@ namespace Insight.Database.Providers.MsSqlClient
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
 		private static void AdjustSqlParameters(SqlCommand command)
 		{
-			var parameters = command.Parameters.OfType<SqlParameter>();
-
-			// if the current user doesn't have execute permissions on the database
-			// DeriveParameters will just skip the parameter
-			// so we are going to check the list ourselves for anything missing
-			var parameterNames = command.Connection.QuerySql(
-				@"SELECT ParameterName = p.name, SchemaName = s.name, TypeName = t.name FROM sys.parameters p
-					LEFT JOIN sys.types t ON (p.user_type_id = t.user_type_id)
-					LEFT JOIN sys.schemas s ON (t.schema_id = s.schema_id)
-					WHERE p.object_id = OBJECT_ID(@Name)",
+			var parameters = command.Connection.QuerySql<ParameterInfo>(
+				@"
+					SELECT p.name, s.name [Schema], t.name Type, p.max_length, p.precision, p.scale, p.is_output FROM sys.parameters p
+						LEFT JOIN sys.types t ON (p.user_type_id = t.user_type_id)
+						LEFT JOIN sys.schemas s ON (t.schema_id = s.schema_id)
+					WHERE p.object_id = OBJECT_ID(@Name) 
+					",
 				new { Name = command.CommandText },
 				transaction: command.Transaction);
-
-			// make sure that we aren't missing any parameters
-			// SQL will skip the parameter in DeriveParameters if the user does not have EXECUTE permissions on the type
-			string missingParameter = parameterNames
-				.Select(n => (string)n["ParameterName"])
-				.FirstOrDefault((string parameterName) => !parameters.Any(p => String.Compare(p.ParameterName, parameterName, StringComparison.OrdinalIgnoreCase) == 0));
-			if (missingParameter != null)
+			SqlCommandBuilder.DeriveParameters(command);
+			command.Parameters.Clear();
+			command.Parameters.Add(new SqlParameter
 			{
-				throw new InvalidOperationException(
-					String.Format(
-						CultureInfo.InvariantCulture,
-						"{0} is missing parameter {1}. Check to see if the parameter is using a type that the current user does not have EXECUTE access to.",
-						command.CommandText,
-						missingParameter));
-			}
-
-			// DeriveParameters will also mess up table type names that have dots in them, so we escape them ourselves
-			// SQL will return them to us unescaped
-			foreach (var p in parameters.Where(p => p.SqlDbType == SqlDbType.Structured))
+				ParameterName = "@RETURN_VALUE",
+				Direction = ParameterDirection.ReturnValue,
+				SqlDbType = SqlDbType.Int
+			});
+			foreach (var param in parameters)
 			{
-				var typeParameter = parameterNames.FirstOrDefault(n => String.Compare(p.ParameterName, (string)n["ParameterName"], StringComparison.OrdinalIgnoreCase) == 0);
-				if (typeParameter != null)
-					p.TypeName = String.Format(CultureInfo.InvariantCulture, "[{0}].[{1}]", typeParameter["SchemaName"], typeParameter["TypeName"]);
-			}
+				if (param.Schema != "sys")
+				{
+					param.Type = String.Format(CultureInfo.InvariantCulture, "[{0}].[{1}]", param.Schema, param.Type);
+				}
+				if ((param.Type == "nvarchar" || param.Type == "nchar") && param.Max_Length != -1)
+				{
+					param.Max_Length = param.Max_Length / 2;
+				}
 
-			// in SQL2008, some UDTs will not have the proper type names, so we set them with good data
-			foreach (var p in parameters.Where(p => p.SqlDbType == SqlDbType.Udt))
-			{
-				var typeParameter = parameterNames.FirstOrDefault(n => String.Compare(p.ParameterName, (string)n["ParameterName"], StringComparison.OrdinalIgnoreCase) == 0);
-				if (typeParameter != null)
-					p.UdtTypeName = String.Format(CultureInfo.InvariantCulture, "[{0}].[{1}]", typeParameter["SchemaName"], typeParameter["TypeName"]);
+				command.Parameters.Add(new SqlParameter
+				{
+					ParameterName = param.Name,
+					Direction = param.Is_Output ? ParameterDirection.InputOutput : ParameterDirection.Input,
+					//Size = param.Max_Length,
+					//Precision = (byte)param.Precision,
+					//Scale = (byte)param.Scale,
+					SqlDbType = SqlTypeMapper.GetSqlDbType(param.Type)
+				});
 			}
 		}
 
