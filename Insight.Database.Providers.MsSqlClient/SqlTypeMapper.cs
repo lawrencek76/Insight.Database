@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-
 using Microsoft.Data;
-using Microsoft.Data.SqlClient;
 
 namespace Insight.Database.Providers.MsSqlClient
 {
 	internal static class SqlTypeMapper
 	{
-		private static readonly IReadOnlyDictionary<string, SqlDbType> Map =
+		private static readonly Dictionary<string, SqlDbType> Map =
 			new Dictionary<string, SqlDbType>(StringComparer.OrdinalIgnoreCase)
 			{
 				["bigint"] = SqlDbType.BigInt,

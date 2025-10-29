@@ -374,7 +374,7 @@ namespace Insight.Database.Providers.MsSqlClient
 					",
 				new { Name = command.CommandText },
 				transaction: command.Transaction);
-			SqlCommandBuilder.DeriveParameters(command);
+			//SqlCommandBuilder.DeriveParameters(command);
 			command.Parameters.Clear();
 			command.Parameters.Add(new SqlParameter
 			{
@@ -386,12 +386,33 @@ namespace Insight.Database.Providers.MsSqlClient
 			{
 				if (param.Schema != "sys")
 				{
-					param.Type = String.Format(CultureInfo.InvariantCulture, "[{0}].[{1}]", param.Schema, param.Type);
+					if (param.Max_Length > 0)
+					{
+						command.Parameters.Add(new SqlParameter
+						{
+							ParameterName = param.Name,
+							Direction = param.Is_Output ? ParameterDirection.InputOutput : ParameterDirection.Input,
+							SqlDbType = SqlDbType.Udt,
+							UdtTypeName = String.Format(CultureInfo.InvariantCulture, "[{0}].[{1}]", param.Schema, param.Type)
+						});
+					}
+					else
+					{
+						command.Parameters.Add(new SqlParameter
+						{
+							ParameterName = param.Name,
+							Direction = param.Is_Output ? ParameterDirection.InputOutput : ParameterDirection.Input,
+							SqlDbType = SqlDbType.Structured,
+							TypeName = String.Format(CultureInfo.InvariantCulture, "[{0}].[{1}]", param.Schema, param.Type)
+						});
+					}
+					continue;
 				}
 				if ((param.Type == "nvarchar" || param.Type == "nchar") && param.Max_Length != -1)
 				{
 					param.Max_Length = param.Max_Length / 2;
 				}
+
 
 				command.Parameters.Add(new SqlParameter
 				{
