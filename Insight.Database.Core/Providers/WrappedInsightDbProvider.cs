@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Insight.Database.Mapping;
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -6,7 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Insight.Database.Mapping;
 
 namespace Insight.Database.Providers
 {
@@ -114,6 +115,18 @@ namespace Insight.Database.Providers
 		{
 			command = GetInnerCommand(command);
 			return InsightDbProvider.For(command).IsXmlParameter(command, parameter);
+		}
+
+		/// <summary>
+		/// Determines if a parameter is an Json type parameter.
+		/// </summary>
+		/// <param name="command">The related command object.</param>
+		/// <param name="parameter">The parameter to test.</param>
+		/// <returns>True if the parameter is an Json parameter.</returns>
+		public override bool IsJsonParameter(IDbCommand command, IDataParameter parameter)
+		{
+			command = GetInnerCommand(command);
+			return InsightDbProvider.For(command).IsJsonParameter(command, parameter);
 		}
 
 		/// <summary>

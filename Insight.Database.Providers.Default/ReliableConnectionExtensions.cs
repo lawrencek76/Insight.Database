@@ -3,7 +3,7 @@ using System.Collections.Generic;
 #if !NO_CONNECTION_SETTINGS
 using System.Configuration;
 #endif
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using Insight.Database;

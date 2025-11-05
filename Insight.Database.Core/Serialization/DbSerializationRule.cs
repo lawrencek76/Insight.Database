@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using Insight.Database.CodeGenerator;
 using Insight.Database.Providers;
 
@@ -183,9 +184,11 @@ namespace Insight.Database
 		/// <returns>The serializer.</returns>
 		internal static IDbObjectSerializer GetSerializer(IDbCommand command, IDataParameter parameter, ClassPropInfo prop)
 		{
-			if (InsightDbProvider.For(parameter).IsXmlParameter(command, parameter))
+			var provider = InsightDbProvider.For(parameter);
+			if (provider.IsXmlParameter(command, parameter))
 				return GetCustomSerializer(prop) ?? XmlObjectSerializer.Serializer;
-
+			if (provider.IsJsonParameter(command, parameter))
+				return GetCustomSerializer(prop) ?? JsonObjectSerializer.Serializer;
 			return EvaluateRules(prop);
 		}
 
@@ -198,9 +201,11 @@ namespace Insight.Database
 		/// <returns>The serializer.</returns>
 		internal static IDbObjectSerializer GetSerializer(IDataReader reader, int column, ClassPropInfo prop)
 		{
-			if (InsightDbProvider.For(reader).IsXmlColumn(reader, column))
+			var provider = InsightDbProvider.For(reader);
+			if (provider.IsXmlColumn(reader, column))
 				return GetCustomSerializer(prop) ?? XmlObjectSerializer.Serializer;
-
+			if (provider.IsJsonColumn(reader, column))
+				return GetCustomSerializer(prop) ?? JsonObjectSerializer.Serializer;
 			return EvaluateRules(prop);
 		}
 

@@ -1,66 +1,79 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#nullable enable
+using System;
 using System.Data;
-using System.IO;
-using System.Linq;
-using System.Runtime.Serialization.Json;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace Insight.Database
 {
     /// <summary>
     /// Serializes objects to JSON using the DataContractJsonSerializer or an overridden serializer (usually Newtonsoft.JSON).
     /// </summary>
-    public class JsonObjectSerializer : DbObjectSerializer
+    public class JsonObjectSerializer : IDbObjectSerializer
     {
-        /// <summary>
-        /// The singleton Serializer.
-        /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes")]
-        public static readonly JsonObjectSerializer Serializer = new JsonObjectSerializer();
+		/// <summary>
+		/// The singleton Serializer.
+		/// </summary>
+		public static DbObjectSerializer Serializer => _serializer;
 
-        /// <summary>
-        /// Gets or sets a JSON Serializer to replace the DataContractJsonSerializer.
-        /// </summary>
-        public static DbObjectSerializer OverrideSerializer { get; set; }
+		private static DbObjectSerializer _serializer;
+		public Func<Type, object, Exception, object>? OnSerializeError { get; set; }
 
-        /// <inheritdoc/>
-        public override bool CanSerialize(Type type, DbType dbType)
+		/// <summary>
+		/// Gets or sets a JSON Serializer to replace the DefaultJsonSerializer.
+		/// </summary>
+		public static DbObjectSerializer? OverrideSerializer { get; set; }
+
+		static JsonObjectSerializer()
+		{
+			_serializer = new DataContractJsonObjectSerializer();
+		}
+		
+		/// <inheritdoc/>
+		public bool CanSerialize(Type type, DbType dbType)
         {
-            return base.CanSerialize(type, dbType) || dbType == DbType.Object;
+			if(OverrideSerializer != null)
+				return OverrideSerializer.CanSerialize(type, dbType);
+			return _serializer.CanSerialize(type, dbType) || dbType == DbType.Object;
         }
 
         /// <inheritdoc/>
-        public override object SerializeObject(Type type, object value)
+        public object SerializeObject(Type type, object value)
         {
             if (OverrideSerializer != null)
                 return OverrideSerializer.SerializeObject(type, value);
 
-            if (value == null)
-                return null;
-
-            // serialize the parameters
-            using (MemoryStream stream = new MemoryStream())
-            {
-                new DataContractJsonSerializer(type).WriteObject(stream, value);
-
-                return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
-            }
-        }
+			return _serializer.SerializeObject(type, value);
+		}
 
         /// <inheritdoc/>
-        public override object DeserializeObject(Type type, object encoded)
+        public object DeserializeObject(Type type, object encoded)
         {
             if (OverrideSerializer != null)
                 return OverrideSerializer.DeserializeObject(type, encoded);
 
-            DataContractJsonSerializer serializer = new DataContractJsonSerializer(type);
+            return _serializer.DeserializeObject(type, encoded);
+		}
 
-            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes((string)encoded)))
-            {
-                return serializer.ReadObject(stream);
-            }
-        }
-    }
+		/// <inheritdoc/>
+		public bool CanDeserialize(Type sourceType, Type targetType)
+		{
+			if (OverrideSerializer != null)
+				return OverrideSerializer.CanDeserialize(sourceType, targetType);
+			return _serializer.CanDeserialize(sourceType, targetType);
+		}
+
+		/// <inheritdoc/>
+		public DbType GetSerializedDbType(Type type, DbType dbType)
+		{
+			if (OverrideSerializer != null)
+				return OverrideSerializer.GetSerializedDbType(type, dbType);
+
+			return _serializer.GetSerializedDbType(type, dbType);
+		}
+
+		public static void UseSystemTextJsonSerializer(JsonSerializerOptions? options = null)
+		{
+			_serializer = new SystemTextJsonObjectSerializer(options);
+		}
+	}
 }

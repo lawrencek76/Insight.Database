@@ -7,7 +7,7 @@ using NUnit.Framework.Legacy;
 using Insight.Database;
 using System.Data;
 using System.Dynamic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace Insight.Tests
 {

@@ -11,6 +11,8 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
@@ -31,6 +33,7 @@ namespace Insight.Database.CodeGenerator
 		/// Special case for enumerable data types.
 		/// </summary>
 		internal const DbType DbTypeEnumerable = (DbType)(-1);
+		internal const DbType DbTypeJson = (DbType)(35);
 
 		/// <summary>
 		/// MethodInfos for methods that we are going to call.
@@ -115,8 +118,7 @@ namespace Insight.Database.CodeGenerator
 			{ DbType.Binary, typeof(byte[]) },
 			{ DbType.Object, typeof(object) },
             { DbType.Xml, typeof(string) },
-			//json
-			{ (DbType)35, typeof(string) },
+			{ DbTypeJson, typeof(string) },
 		};
 
 		/// <summary>
@@ -374,7 +376,19 @@ namespace Insight.Database.CodeGenerator
 					// we are sending up an XDocument. Use ToString.
 					il.Emit(OpCodes.Callvirt, memberType.GetMethod("ToString", new Type[] { }));
 				}
-                else if (serializer != null && serializer.CanSerialize(memberType, sqlType))
+				else if (memberType == typeof(JsonNode))
+				{
+					// we are sending up a JsonNode. Use ToString.
+					il.Emit(OpCodes.Callvirt, memberType.GetMethod("ToString", new Type[] { }));
+				}
+				else if(memberType == typeof(JsonDocument))
+				{
+					// we are sending up a JsonDocument. Use RootElement.GetRawText().
+					il.Emit(OpCodes.Callvirt, memberType.GetProperty("RootElement").GetGetMethod());
+					il.Emit(OpCodes.Callvirt, typeof(JsonElement).GetMethod("GetRawText", new Type[] { }));
+				}
+
+				else if (serializer != null && serializer.CanSerialize(memberType, sqlType))
 				{
 					il.EmitLoadType(memberType);
 					StaticFieldStorage.EmitLoad(il, serializer);

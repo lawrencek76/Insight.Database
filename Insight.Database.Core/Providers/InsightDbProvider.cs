@@ -370,13 +370,26 @@ namespace Insight.Database.Providers
             return parameter.DbType == DbType.Xml;
         }
 
-        /// <summary>
-        /// Determines if a parameter is a Table-valued parameter.
-        /// </summary>
-        /// <param name="command">The related command object.</param>
-        /// <param name="parameter">The parameter to test.</param>
-        /// <returns>True if the parameter is a table-valued parameter.</returns>
-        public virtual bool IsTableValuedParameter(IDbCommand command, IDataParameter parameter)
+		/// <summary>
+		/// Determines if a parameter is an Json type parameter.
+		/// </summary>
+		/// <param name="command">The related command object.</param>
+		/// <param name="parameter">The parameter to test.</param>
+		/// <returns>True if the parameter is an Json parameter.</returns>
+		public virtual bool IsJsonParameter(IDbCommand command, IDataParameter parameter)
+		{
+			if (parameter == null) throw new ArgumentNullException("parameter");
+
+			return parameter.DbType == DbParameterGenerator.DbTypeJson;
+		}
+
+		/// <summary>
+		/// Determines if a parameter is a Table-valued parameter.
+		/// </summary>
+		/// <param name="command">The related command object.</param>
+		/// <param name="parameter">The parameter to test.</param>
+		/// <returns>True if the parameter is a table-valued parameter.</returns>
+		public virtual bool IsTableValuedParameter(IDbCommand command, IDataParameter parameter)
         {
             return false;
         }
@@ -416,16 +429,27 @@ namespace Insight.Database.Providers
             return false;
         }
 
-        /// <summary>
-        /// Bulk copies a set of objects to the server.
-        /// </summary>
-        /// <param name="connection">The connection to use.</param>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="reader">The reader to read objects from.</param>
-        /// <param name="configure">A callback method to configure the bulk copy object.</param>
-        /// <param name="options">Options for initializing the bulk copy object.</param>
-        /// <param name="transaction">An optional transaction to participate in.</param>
-        public virtual void BulkCopy(IDbConnection connection, string tableName, IDataReader reader, Action<InsightBulkCopy> configure, InsightBulkCopyOptions options, IDbTransaction transaction)
+		/// <summary>
+		/// Determines if the given column in the schema table is an Json column.
+		/// </summary>
+		/// <param name="reader">The data reader to analyze.</param>
+		/// <param name="index">The index of the column.</param>
+		/// <returns>True if the column is an Json column.</returns>
+		public virtual bool IsJsonColumn(IDataReader reader, int index)
+		{
+			return false;
+		}
+
+		/// <summary>
+		/// Bulk copies a set of objects to the server.
+		/// </summary>
+		/// <param name="connection">The connection to use.</param>
+		/// <param name="tableName">The name of the table.</param>
+		/// <param name="reader">The reader to read objects from.</param>
+		/// <param name="configure">A callback method to configure the bulk copy object.</param>
+		/// <param name="options">Options for initializing the bulk copy object.</param>
+		/// <param name="transaction">An optional transaction to participate in.</param>
+		public virtual void BulkCopy(IDbConnection connection, string tableName, IDataReader reader, Action<InsightBulkCopy> configure, InsightBulkCopyOptions options, IDbTransaction transaction)
         {
             throw CreateNotRegisteredException(connection, String.Format(CultureInfo.InvariantCulture, "Cannot bulk copy into table {0}", tableName));
         }

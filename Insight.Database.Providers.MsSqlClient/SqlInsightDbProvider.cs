@@ -267,6 +267,22 @@ namespace Insight.Database.Providers.MsSqlClient
 #endif
 		}
 
+		/// <inheritdoc/>
+		public override bool IsJsonColumn(IDataReader reader, int index)
+		{
+			if (reader == null) throw new ArgumentNullException("reader");
+			
+#if !NO_COLUMN_SCHEMA
+			var schemaGenerator = (IDbColumnSchemaGenerator)reader;
+			var schema = schemaGenerator.GetColumnSchema();
+			return schemaGenerator.GetColumnSchema()[index].DataTypeName == "json";
+#elif !NO_SCHEMA_TABLE
+			return ((Type)reader.GetSchemaTable().Rows[index]["ProviderSpecificDataType"]) == typeof(Microsoft.Data.SqlTypes.SqlJson);
+#else
+			throw new NotImplementedException();
+#endif
+		}
+
 		/// <summary>
 		/// Bulk copies a set of objects to the server.
 		/// </summary>

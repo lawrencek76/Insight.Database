@@ -5,11 +5,9 @@ using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Data.Common;
 
 #pragma warning disable 0649
 
@@ -200,7 +198,7 @@ namespace Insight.Tests
 		{
 			for (int i = 0; i < count; i++)
 			{
-				new SqlConnectionStringBuilder(ConnectionString)
+				new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(ConnectionString)
 					.ReliableDynamic<int>()
 					.ReflectInt32TableAsync(new List<int>() { 5, 7 })
 					.Wait();

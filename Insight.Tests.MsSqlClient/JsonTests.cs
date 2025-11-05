@@ -86,31 +86,33 @@ namespace Insight.Tests.MsSqlClient
 		[Test]
 		public void JsonColumnCanDeserializeToJsonDocument()
 		{
+			JsonObjectSerializer.UseSystemTextJsonSerializer();
 			var list = Connection().QuerySql<Result>("SELECT JsonDocument=CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
-
 			ClassicAssert.IsNotNull(list);
 			var result = list[0];
 			ClassicAssert.IsNotNull(result);
 			ClassicAssert.IsNotNull(result.JsonDocument);
-			ClassicAssert.AreEqual("{\"Text\":\"foo\"}", result.JsonDocument.ToString());
+			ClassicAssert.AreEqual("{\"Text\":\"foo\"}", result.JsonDocument.RootElement.GetRawText());
 		}
 
 		[Test]
         public void JsonColumnCanDeserializeToJsonNode()
         {
-            var list = Connection().QuerySql<Result>("SELECT JsonNode=CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
+			JsonObjectSerializer.UseSystemTextJsonSerializer();
+			var list = Connection().QuerySql<Result>("SELECT JsonNode=CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
 
             ClassicAssert.IsNotNull(list);
             var result = list[0];
             ClassicAssert.IsNotNull(result);
             ClassicAssert.IsNotNull(result.JsonNode);
-            ClassicAssert.AreEqual("{\"Text\":\"foo\"}", result.JsonNode.ToString());
+            ClassicAssert.AreEqual("{\"Text\":\"foo\"}", result.JsonNode.ToJsonString());
         }
 
         [Test]
         public void JsonColumnCanDeserializeToObject()
         {
-            var list = Connection().QuerySql<Result>("SELECT Data=CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
+			JsonObjectSerializer.UseSystemTextJsonSerializer();
+			var list = Connection().QuerySql<Result>("SELECT Data=CONVERT(json, '{ \"Text\": \"foo\" }')", new { });
 
             ClassicAssert.IsNotNull(list);
             var result = list[0];
@@ -124,8 +126,9 @@ namespace Insight.Tests.MsSqlClient
         [Test]
         public void JsonDocumentCanSerializeToJsonParameter()
         {
-            // create a document
-            JsonDocument doc = JsonDocument.Parse("{ \"Text\": \"foo\" }");
+			// create a document
+			JsonObjectSerializer.UseSystemTextJsonSerializer();
+			JsonDocument doc = JsonDocument.Parse("{ \"Text\": \"foo\" }");
 
             var list = Connection().Query<JsonDocument>("ReflectJson", new { Json = doc });
             var data = list[0];
@@ -136,8 +139,9 @@ namespace Insight.Tests.MsSqlClient
         [Test]
         public void JsonNodeCanSerializeToJsonParameter()
         {
-            // create a document
-            JsonNode doc = JsonNode.Parse("{ \"Text\": \"foo\" }");
+			// create a document
+			JsonObjectSerializer.UseSystemTextJsonSerializer();
+			JsonNode doc = JsonNode.Parse("{ \"Text\": \"foo\" }");
 
             var list = Connection().Query<JsonNode>("ReflectJson", new { Json = doc });
             var data = list[0];
@@ -148,8 +152,9 @@ namespace Insight.Tests.MsSqlClient
         [Test]
         public void ObjectCanSerializeToJsonParameter()
         {
-            // create a document
-            Data d = new Data()
+			JsonObjectSerializer.UseSystemTextJsonSerializer();
+			// create a document
+			Data d = new Data()
             {
                 Text = "foo"
             };

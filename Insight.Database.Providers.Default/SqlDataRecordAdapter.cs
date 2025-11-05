@@ -6,7 +6,7 @@ using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 using Insight.Database.CodeGenerator;
-using Microsoft.SqlServer.Server;
+using Microsoft.Data.SqlClient.Server;
 
 namespace Insight.Database.Providers.Default
 {
@@ -66,7 +66,7 @@ namespace Insight.Database.Providers.Default
 				null, // user defined type
 				c.IsIdentity || c.IsReadOnly, // use server default
 				false, // is unique key
-				System.Data.SqlClient.SortOrder.Unspecified,
+				Microsoft.Data.SqlClient.SortOrder.Unspecified,
 				-1)).ToArray();
 		}
 

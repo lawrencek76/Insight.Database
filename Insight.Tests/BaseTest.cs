@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Insight.Database;
 using NUnit.Framework;
 using System.Reflection;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.IO;
 using System.Text.RegularExpressions;

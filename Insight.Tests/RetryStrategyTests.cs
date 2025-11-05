@@ -6,7 +6,7 @@ using Insight.Database;
 using Insight.Database.Reliable;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Threading.Tasks;
 using System.Data.Common;

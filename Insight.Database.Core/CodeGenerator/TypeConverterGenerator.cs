@@ -9,6 +9,8 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -32,7 +34,8 @@ namespace Insight.Database.CodeGenerator
 		private static readonly MethodInfo _readNullableChar = typeof(TypeConverterGenerator).GetMethod("ReadNullableChar");
 		private static readonly MethodInfo _readXmlDocument = typeof(TypeConverterGenerator).GetMethod("ReadXmlDocument");
 		private static readonly MethodInfo _readXDocument = typeof(TypeConverterGenerator).GetMethod("ReadXDocument");
-
+		private static readonly MethodInfo _readJsonDocument = typeof(TypeConverterGenerator).GetMethod("ReadJsonDocument");
+		private static readonly MethodInfo _readJsonNode = typeof(TypeConverterGenerator).GetMethod("ReadJsonNode");
 		/// <summary>
 		/// The number of ticks to offset when converting between .NET TimeSpan and SQL DateTime.
 		/// </summary>
@@ -123,6 +126,14 @@ namespace Insight.Database.CodeGenerator
 
                 // after: stack => [target][xDocument]
             }
+			else if(targetType == typeof(JsonDocument))
+			{
+				il.Emit(OpCodes.Call, _readJsonDocument);
+			}
+			else if(targetType == typeof(JsonNode))
+			{
+				il.Emit(OpCodes.Call, _readJsonNode);
+			}
             else if (serializer != null && serializer.CanDeserialize(sourceType, targetType))
             {
                 // we are getting a string from the database, but the target is not a string, and it's a reference type
@@ -267,6 +278,26 @@ namespace Insight.Database.CodeGenerator
 		public static XDocument ReadXDocument(object value)
 		{
 			return XDocument.Parse(value.ToString(), LoadOptions.None);
+		}
+
+		/// <summary>
+		/// Reads an JsonDocument from a column.
+		/// </summary>
+		/// <param name="value">The value to convert to an JsonDocument.</param>
+		/// <returns>The JsonDocument.</returns>
+		public static JsonDocument ReadJsonDocument(object value)
+		{
+			return JsonDocument.Parse(value.ToString());
+		}
+
+		/// <summary>
+		/// Reads an JsonNoce from a column.
+		/// </summary>
+		/// <param name="value">The value to convert to an JsonNode.</param>
+		/// <returns>The JsonNode.</returns>
+		public static JsonNode ReadJsonNodet(object value)
+		{
+			return JsonNode.Parse(value.ToString());
 		}
 
 		/// <summary>

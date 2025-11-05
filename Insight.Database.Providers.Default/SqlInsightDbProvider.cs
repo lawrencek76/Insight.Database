@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -273,16 +273,30 @@ namespace Insight.Database
 #endif
         }
 
-        /// <summary>
-        /// Bulk copies a set of objects to the server.
-        /// </summary>
-        /// <param name="connection">The connection to use.</param>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="reader">The reader to read objects from.</param>
-        /// <param name="configure">A callback method to configure the bulk copy object.</param>
-        /// <param name="options">Options for initializing the bulk copy object.</param>
-        /// <param name="transaction">An optional transaction to participate in.</param>
-        public override void BulkCopy(IDbConnection connection, string tableName, IDataReader reader, Action<InsightBulkCopy> configure, InsightBulkCopyOptions options, IDbTransaction transaction)
+		public override bool IsJsonColumn(IDataReader reader, int index)
+		{
+			if (reader == null) throw new ArgumentNullException("reader");
+#if !NO_COLUMN_SCHEMA
+			var schemaGenerator = (IDbColumnSchemaGenerator)reader;
+			var schema = schemaGenerator.GetColumnSchema();
+			return schemaGenerator.GetColumnSchema()[index].DataTypeName == "json";
+#elif !NO_SCHEMA_TABLE
+			return ((Type)reader.GetSchemaTable().Rows[index]["ProviderSpecificDataType"]) == typeof(Microsoft.Data.SqlTypes.SqlJson);
+#else
+			throw new NotImplementedException();
+#endif
+		}
+
+		/// <summary>
+		/// Bulk copies a set of objects to the server.
+		/// </summary>
+		/// <param name="connection">The connection to use.</param>
+		/// <param name="tableName">The name of the table.</param>
+		/// <param name="reader">The reader to read objects from.</param>
+		/// <param name="configure">A callback method to configure the bulk copy object.</param>
+		/// <param name="options">Options for initializing the bulk copy object.</param>
+		/// <param name="transaction">An optional transaction to participate in.</param>
+		public override void BulkCopy(IDbConnection connection, string tableName, IDataReader reader, Action<InsightBulkCopy> configure, InsightBulkCopyOptions options, IDbTransaction transaction)
         {
             var bcp = PrepareBulkCopy(connection, tableName, reader, configure, options, transaction);
 
